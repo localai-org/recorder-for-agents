@@ -98,6 +98,27 @@ def rounded(d, rect, r, fill=None, outline=None, width=1):
     d.rounded_rectangle(rect, r, fill=fill, outline=outline, width=width)
 
 
+def bar_group(d, rows, label_right, bar_x, bar_w, y, fmt, lab_font, val_font,
+              bar_h=16, row_gap=24):
+    """Draw a labelled horizontal bar pair (label on the left, value on the right),
+    normalised so the largest value fills `bar_w`. Returns the y past the group.
+    A tiny minimum width keeps the short bar visible so the gap reads as a ratio,
+    not as an empty track. Used for both the on-par speed bars and the standout
+    peak-RAM bars on the end card."""
+    vmax = max(v for _, v, _ in rows)
+    step = bar_h + row_gap
+    for i, (lab, v, c) in enumerate(rows):
+        ry = y + i * step
+        ty = ry + (bar_h - 17) // 2
+        d.text((label_right - d.textlength(lab, font=lab_font) - 16, ty), lab,
+               fill=c, font=lab_font)
+        rounded(d, [bar_x, ry, bar_x + bar_w, ry + bar_h], 4, fill=(28, 35, 44))
+        fillw = max(4, int(bar_w * v / vmax))
+        rounded(d, [bar_x, ry, bar_x + fillw, ry + bar_h], 4, fill=c)
+        d.text((bar_x + bar_w + 16, ty), fmt(v), fill=INK, font=val_font)
+    return y + len(rows) * step - row_gap
+
+
 def draw_brandline(cv, W, H, margin=40):
     """Persistent bottom CTA carried on every race frame (face-detect carousel
     treatment): project repo on the left, the LocalAI team tagline + localai.io
@@ -175,6 +196,11 @@ def pane(cv, rect, spec, eng, frac, done_other, t_ms):
         d.text((ix, sy + 32), sub, fill=INK, font=font(15, False))
         tline = f"verify in {eng['proc_ms']:.1f} ms   ({spec['threads']} threads)"
         d.text((ix, sy + 56), tline, fill=accent, font=font(16))
+        # per-engine peak RAM: the durable win - the ggml binary is a fraction of
+        # the Python reference's resident set for the very same verify.
+        if "ram_mb" in eng:
+            d.text((ix, sy + 82), f"peak RAM {eng['ram_mb']:.0f} MB",
+                   fill=DIM, font=font(14, False))
         # honest tag: both engines reach the IDENTICAL bit-exact verdict
         badge = "bit-exact match"
         bw = d.textlength(badge, font=font(14)) + 30
@@ -207,12 +233,12 @@ def race_frame(W, H, spec, engines, w_elapsed, dilate):
     fy = top + ph + 30
     d = ImageDraw.Draw(cv)
     if all(states):
-        foot = ("same WeSpeaker embedding, bit-exact (cosine parity 1.000)  -  "
-                "on par end-to-end, zero Python")
+        foot = ("same WeSpeaker embedding, bit-exact (cosine parity 1.000)  ·  "
+                "speed on par, a fraction of the RAM, zero Python")
         ff = font(16, False)
         d.text(((W - d.textlength(foot, font=ff)) // 2, fy), foot, fill=GREEN, font=ff)
     else:
-        foot = "two engines, one bit-exact embedding  -  voice-detect.cpp ships as a single binary, no Python"
+        foot = "two engines, one bit-exact embedding  ·  voice-detect.cpp ships as a single binary, no Python"
         ff = font(16, False)
         d.text(((W - d.textlength(foot, font=ff)) // 2, fy), foot, fill=DIM, font=ff)
     draw_brandline(cv, W, H)
@@ -241,7 +267,7 @@ def race_frame_square(W, H, spec, engines, w_elapsed, dilate):
     d = ImageDraw.Draw(cv)
     if all(states):
         foot = ("same WeSpeaker embedding, bit-exact (cosine parity 1.000)  ·  "
-                "on par end-to-end, zero Python")
+                "speed on par, a fraction of the RAM, zero Python")
         ff = font(15, False)
         d.text(((W - d.textlength(foot, font=ff)) // 2, fy), foot, fill=GREEN, font=ff)
     else:
@@ -257,45 +283,59 @@ def end_card(W, H, spec):
     d = ImageDraw.Draw(cv)
     # subtle teal glow band
     logo = Image.open(LOGO_PATH).convert("RGBA")
-    ls = 200
+    ls = 168
     logo = logo.resize((ls, ls), Image.LANCZOS)
     lx = (W - ls) // 2
-    ly = int(H * 0.10)
+    ly = int(H * 0.05)
     cv.paste(logo, (lx, ly), logo)
     fteam = font(18, False)
     team = "from the LocalAI team  ·  localai.io"
-    d.text(((W - d.textlength(team, font=fteam)) // 2, ly + ls + 6), team, fill=DIM, font=fteam)
+    d.text(((W - d.textlength(team, font=fteam)) // 2, ly + ls + 4), team, fill=DIM, font=fteam)
     # headline - the durable, honest win: bit-exact + dependency-free
-    big = font(38)
+    big = font(36)
     head = "Bit-exact with onnxruntime, zero Python"
     hw = d.textlength(head, font=big)
     if hw > W - 80:
-        big = font(34)
+        big = font(32)
         hw = d.textlength(head, font=big)
-    hy = ly + ls + 46
+    hy = ly + ls + 40
     d.text(((W - hw) // 2, hy), head, fill=TEAL, font=big)
-    sub = "same WeSpeaker embedding, one static binary, no torch, no onnxruntime"
-    fsub = font(19, False)
-    d.text(((W - d.textlength(sub, font=fsub)) // 2, hy + 52), sub, fill=INK, font=fsub)
-    # honest detail line - on par end to end, no inflated ratio
-    det = (f"end-to-end verify (2 embeds, {spec['threads']} threads, median): "
-           f"ggml {spec['ggml_verify_ms']:.1f} ms  on par with  onnxruntime {spec['onnx_verify_ms']:.1f} ms")
-    fdet = font(15, False)
-    d.text(((W - d.textlength(det, font=fdet)) // 2, hy + 86), det, fill=DIM, font=fdet)
-    # honest on-par bars: end-to-end verify ms (lower = faster), real measured
-    bars = [("voice-detect.cpp", spec["ggml_verify_ms"], TEAL),
-            ("onnxruntime", spec["onnx_verify_ms"], SLATE)]
-    bx0 = int(W * 0.30)
+    sub = "same WeSpeaker embedding  ·  one static binary  ·  a fraction of the RAM, no torch"
+    fsub = font(18, False)
+    d.text(((W - d.textlength(sub, font=fsub)) // 2, hy + 46), sub, fill=INK, font=fsub)
+
+    # bar tracks: a shared geometry so the on-par speed pair and the standout
+    # peak-RAM pair line up on the same left edge.
+    bx0 = int(W * 0.34)
     bw_full = int(W * 0.30)
-    vmax = max(v for _, v, _ in bars)
-    fb = font(17)
-    by0 = hy + 138
-    for i, (lab, v, c) in enumerate(bars):
-        y = by0 + i * 40
-        d.text((bx0 - d.textlength(lab, font=fb) - 16, y - 2), lab, fill=c, font=fb)
-        rounded(d, [bx0, y, bx0 + bw_full, y + 16], 4, fill=(28, 35, 44))
-        rounded(d, [bx0, y, bx0 + int(bw_full * v / vmax), y + 16], 4, fill=c)
-        d.text((bx0 + bw_full + 16, y - 2), f"{v:.1f} ms", fill=INK, font=fb)
+    flab = font(16)
+    fval = font(16)
+    fsec = font(15, False)
+
+    # 1) verify speed - honest, on par. The two bars are nearly equal length.
+    sy = hy + 86
+    d.text((bx0, sy), f"verify speed  ·  on par  (end-to-end, {spec['threads']} threads, lower is better)",
+           fill=DIM, font=fsec)
+    speed = [("voice-detect.cpp", spec["ggml_verify_ms"], TEAL),
+             ("onnxruntime", spec["onnx_verify_ms"], SLATE)]
+    bar_group(d, speed, bx0, bx0, bw_full, sy + 24,
+              lambda v: f"{v:.1f} ms", flab, fval, bar_h=14, row_gap=18)
+
+    # 2) peak RAM - the real, measured win. The ggml bar is a sliver next to the
+    # full-width onnxruntime bar, so the ~5x gap is the visual standout.
+    ry = sy + 96
+    d.text((bx0, ry), "peak RAM, one verify  ·  measured /usr/bin/time -v, lower is better",
+           fill=INK, font=fsec)
+    ram = [("voice-detect.cpp", spec["ram_ggml_mb"], TEAL),
+           ("onnxruntime", spec["ram_onnx_mb"], SLATE)]
+    rend = bar_group(d, ram, bx0, bx0, bw_full, ry + 24,
+                     lambda v: f"{v:.0f} MB", flab, fval, bar_h=20, row_gap=14)
+    # bold callout: the standout number
+    ratio = spec.get("ram_ratio") or (spec["ram_onnx_mb"] / spec["ram_ggml_mb"])
+    callout = f"~{ratio:.0f}x less RAM"
+    fco = font(30)
+    d.text(((W - d.textlength(callout, font=fco)) // 2, rend + 14), callout,
+           fill=GOLD, font=fco)
     # links - standing rule: localai.io + github.com/mudler/LocalAI (umbrella)
     # on the first row, the project repo + HF weights on the second.
     fl = font(17)
@@ -347,32 +387,39 @@ def end_card_square(W, H, spec):
     d.text((cx - hw / 2, y), head, fill=TEAL, font=big)
     y += 50
 
-    sub = "same WeSpeaker embedding, one static binary, no torch, no onnxruntime"
-    fsub = font(18, False)
+    sub = "same WeSpeaker embedding  ·  one static binary  ·  a fraction of the RAM, no torch"
+    fsub = font(17, False)
     d.text((cx - d.textlength(sub, font=fsub) / 2, y), sub, fill=INK, font=fsub)
-    y += 36
+    y += 46
 
-    det = (f"end-to-end verify (2 embeds, {spec['threads']} threads, median): "
-           f"ggml {spec['ggml_verify_ms']:.1f} ms  on par with  "
-           f"onnxruntime {spec['onnx_verify_ms']:.1f} ms")
-    fdet = font(15, False)
-    d.text((cx - d.textlength(det, font=fdet) / 2, y), det, fill=DIM, font=fdet)
-    y += 42
+    bx0 = int(W * 0.35)
+    bw_full = int(W * 0.34)
+    flab = font(16)
+    fval = font(16)
+    fsec = font(15, False)
 
-    # honest on-par bars: end-to-end verify ms (lower = faster), real measured
-    bars = [("voice-detect.cpp", spec["ggml_verify_ms"], TEAL),
-            ("onnxruntime", spec["onnx_verify_ms"], SLATE)]
-    bx0 = int(W * 0.34)
-    bw_full = int(W * 0.30)
-    vmax = max(v for _, v, _ in bars)
-    fb = font(17)
-    for i, (lab, v, c) in enumerate(bars):
-        by = y + i * 40
-        d.text((bx0 - d.textlength(lab, font=fb) - 16, by - 2), lab, fill=c, font=fb)
-        rounded(d, [bx0, by, bx0 + bw_full, by + 16], 4, fill=(28, 35, 44))
-        rounded(d, [bx0, by, bx0 + int(bw_full * v / vmax), by + 16], 4, fill=c)
-        d.text((bx0 + bw_full + 16, by - 2), f"{v:.1f} ms", fill=INK, font=fb)
-    y += 2 * 40 + 24
+    # verify speed - honest, on par (the two bars are nearly equal length)
+    slab = f"verify speed  ·  on par  (end-to-end, {spec['threads']} threads, lower is better)"
+    d.text((cx - d.textlength(slab, font=fsec) / 2, y), slab, fill=DIM, font=fsec)
+    y += 26
+    speed = [("voice-detect.cpp", spec["ggml_verify_ms"], TEAL),
+             ("onnxruntime", spec["onnx_verify_ms"], SLATE)]
+    y = bar_group(d, speed, bx0, bx0, bw_full, y, lambda v: f"{v:.1f} ms",
+                  flab, fval, bar_h=14, row_gap=18) + 42
+
+    # peak RAM - the real, measured win (the ggml bar is a sliver vs onnxruntime)
+    rlab = "peak RAM, one verify  ·  measured /usr/bin/time -v, lower is better"
+    d.text((cx - d.textlength(rlab, font=fsec) / 2, y), rlab, fill=INK, font=fsec)
+    y += 26
+    ram = [("voice-detect.cpp", spec["ram_ggml_mb"], TEAL),
+           ("onnxruntime", spec["ram_onnx_mb"], SLATE)]
+    y = bar_group(d, ram, bx0, bx0, bw_full, y, lambda v: f"{v:.0f} MB",
+                  flab, fval, bar_h=20, row_gap=14) + 18
+    ratio = spec.get("ram_ratio") or (spec["ram_onnx_mb"] / spec["ram_ggml_mb"])
+    callout = f"~{ratio:.0f}x less RAM"
+    fco = font(30)
+    d.text((cx - d.textlength(callout, font=fco) / 2, y), callout, fill=GOLD, font=fco)
+    y += 54
 
     # verdict reinforcement, straight from the race result (honest, real distance)
     fv = font(20)

@@ -20,14 +20,25 @@ same verdict (`SAME SPEAKER  d=0.197 < 0.25`). The timing bars fill at the real
 measured means in `spec.json` (ggml **30.0 ms** vs onnxruntime **33.5 ms**
 end-to-end verify).
 
+The end card carries a second, **standout** bar pair: **peak RAM for one verify**,
+voice-detect.cpp **~62 MB** vs onnxruntime **~334 MB**, a bold **~5x less RAM**
+callout. That is the real, durable win here: the ggml binary has no Python, torch
+or onnxruntime process. Both peak-RSS numbers are measured with `/usr/bin/time -v`
+and stored in `spec.json` as `ram_ggml_mb` / `ram_onnx_mb` / `ram_ratio`. The
+reference figure is the **CPU-only torch wheel**, the fair CPU-to-CPU comparison
+(~5.4x); the default-install CUDA torch wheel would show ~11x, but it pulls unused
+CUDA runtime libs into RSS even on a CPU verify, so we report the conservative
+number.
+
 ## The honest rule comes first here
 
 This demo deliberately makes **NO speed-win claim**. End to end the two engines
 are **on par** (~12 percent), and by best-case `min` onnxruntime is actually
 faster. Inventing a "1.5x faster" headline would be a lie, so the demo does not.
-Instead it leads from the two **durable, honest** wins: **bit-exact parity** with
-onnxruntime (identical embedding, cosine 1.000) and a **zero-Python single static
-binary**. The race is the hook; the end card is the truth.
+Instead it leads from the **durable, honest** wins: **bit-exact parity** with
+onnxruntime (identical embedding, cosine 1.000), a **zero-Python single static
+binary**, and **~5x less peak RAM** for the same verify. The race is the hook;
+the end card is the truth.
 
 That is the reusable discipline: **if it is not a clean win, frame it as "on par"
 and lead with bit-exact + zero-dependency.** Every number on screen is read from
@@ -96,10 +107,11 @@ the whole point.
 ### 5. End on the LocalAI CTA card
 
 `end_card()` shows the **logo** (`localai_logo.png`, configurable via `--logo`),
-the team tagline, the honest bit-exact headline, the **on-par bars** (real ggml vs
-onnx verify ms), and **four links** (localai.io, the LocalAI repo, the engine repo,
-the GGUF repo). Same finish as the `duel`/`face_carousel` outros, drawn instead of
-muxed.
+the team tagline, the honest bit-exact headline, two stacked bar pairs (the
+**on-par speed bars**, real ggml vs onnx verify ms, plus the **standout peak-RAM
+bars** with the bold `~5x less RAM` callout, the real win), and **four links**
+(localai.io, the LocalAI repo, the engine repo, the GGUF repo). Same finish as the
+`duel`/`face_carousel` outros, drawn instead of muxed.
 
 ### 6. Pillow loop + ffmpeg encode (mp4 + palettegen/paletteuse gif)
 
@@ -135,7 +147,9 @@ Four edits, nothing else:
    `--cli` / `--model` flags name the binary + weights that produced `spec.json`.
 2. **The `spec.json` numbers**: the keys the render reads are
    `ggml_verify_ms`, `onnx_verify_ms`, `distance`, `threshold`, `verdict`,
-   `threads`. Rename/extend to your task's real measured fields.
+   `threads`, plus the peak-RAM trio `ram_ggml_mb`, `ram_onnx_mb`, `ram_ratio`
+   (measured with `/usr/bin/time -v`, the standout end-card bars). Rename/extend
+   to your task's real measured fields.
 3. **The per-engine pane fields** in `pane()`: the title/device line, the two
    waveforms (swap for a spectrogram, a transcript, a depth map, boxes...), the
    progress-bar source, and the revealed verdict block.
