@@ -1,0 +1,8 @@
+{
+ "key": "nemo_gpu",
+ "label": "NVIDIA NeMo (PyTorch, FP32)",
+ "device": "NVIDIA GB10",
+ "proc_s": 1.8,
+ "rtfx": 410.0,
+ "audio_s": 738.0
+}

@@ -1,0 +1,8 @@
+{
+ "key": "pkcpp_cpu",
+ "label": "parakeet.cpp (F16)",
+ "device": "AMD Ryzen 9 9950X3D",
+ "proc_s": 5.081,
+ "rtfx": 145.2,
+ "audio_s": 738.0
+}

@@ -1,0 +1,8 @@
+{
+ "key": "pkcpp_gpu",
+ "label": "parakeet.cpp (F16)",
+ "device": "NVIDIA GB10",
+ "proc_s": 1.836,
+ "rtfx": 402.0,
+ "audio_s": 738.0
+}

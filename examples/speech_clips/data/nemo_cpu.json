@@ -1,0 +1,8 @@
+{
+ "key": "nemo_cpu",
+ "label": "NVIDIA NeMo (PyTorch, FP32)",
+ "device": "AMD Ryzen 9 9950X3D",
+ "proc_s": 14.568,
+ "rtfx": 50.7,
+ "audio_s": 738.0
+}
