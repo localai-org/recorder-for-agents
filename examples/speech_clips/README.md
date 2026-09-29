@@ -113,4 +113,8 @@ WORK=$PWD BG="#0d1117" FG="#d7dde5" FONTSIZE=21 WIDTH=1080 HEIGHT=1080 DURATION=
   from the two durations instead.
 - Sound tags come from a 3 s window scored once a second, so boundaries sit on a one second
   grid, and plain Speech scores far above the gendered speech labels on cartoon voices.
+- Any aspect ratio works: the film is scaled to cover its region and cropped a little above
+  centre, so 4:3 films (old public-domain features) are cropped rather than covering the
+  captions. The crop is a judgement call; look at a frame before committing to a clip.
+- With many speakers the lanes shrink to stay above the footer (tested with five).
 - Show at most four chips at once, or a multi-label burst (Insect, Fly, Bee) covers the film.

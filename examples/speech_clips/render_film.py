@@ -47,14 +47,17 @@ def font(name, size, weight):
 # ---------------------------------------------------------------- layout
 if a.layout == "square":
     W, H = 1080, 1080
-    VID = dict(w=1080, h=int(round(1080 * SRC_H / SRC_W / 2)) * 2, y=150, crop=None)
+    # wide films keep their own height; taller ones (4:3) are cropped to 520 so captions stay clear of the picture
+    VID = dict(w=1080, h=min(int(round(1080 * SRC_H / SRC_W / 2)) * 2, 520), y=150)
     S = 1.0
-    CAP_Y, LANES_Y, FOOT_Y = 628, 872, 1002
+    CAP_Y, LANES_Y, FOOT_Y = 150 + VID["h"] + 28, 872, 1002
+    CAP_LINES = 3 if VID["h"] <= 470 else 2
 else:
     W, H = 1080, 1920
-    VID = dict(w=1080, h=720, y=330, crop=(int(round(720 * SRC_W / SRC_H / 2)) * 2, 720))  # scale to 1726x720, center-crop 1080
+    VID = dict(w=1080, h=720, y=330)  # any aspect ratio is scaled to cover 1080x720 and cropped
     S = 1.3
     CAP_Y, LANES_Y, FOOT_Y = 1110, 1560, 1850
+    CAP_LINES = 3
 
 F_TITLE = font("SpaceGrotesk", int(46 * S), b"Bold")
 F_SUB = font("JetBrainsMono", int(21 * S), b"Regular")
@@ -161,7 +164,7 @@ def draw_overlay(img, t):
         pill(dr, m, CAP_Y, spk_label(cur["spk"]), F_TAG, BG, col + (int(255 * k),))
         lines = wrap(shown, F_CAP, W - 2 * m, dr)
         y = CAP_Y + int(54 * S)
-        for ln in lines[-3:]:
+        for ln in lines[-CAP_LINES:]:
             dr.text((m, y), ln, font=F_CAP, fill=INK)
             y += int(54 * S)
 
@@ -169,7 +172,13 @@ def draw_overlay(img, t):
     names = [(i, spk_label(i), spk_col(i)) for i in range(len(order))] + [(-2, "SOUNDS", SND)]
     lx0 = m + int(150 * S); lx1 = W - m
     y = LANES_Y
+    gap = int(8 * S)
     lh = int(26 * S)
+    # many speakers: shrink the lanes so they stay above the footer instead of running into it
+    pitch = min(lh + gap, (FOOT_Y - 14 - LANES_Y) // len(names))
+    if pitch < lh + gap:
+        gap = max(2, pitch // 4)
+        lh = pitch - gap
     for idx, name, col in names:
         dr.text((m, y - 2), name if idx != -2 else "SOUNDS", font=F_LANE, fill=col)
         dr.line((lx0, y + lh // 2 - 2, lx1, y + lh // 2 - 2), fill=RULE, width=2)
@@ -181,8 +190,8 @@ def draw_overlay(img, t):
                 continue
             x0 = lx0 + (s0 - a.t0) / DUR * (lx1 - lx0)
             x1 = lx0 + (s1 - a.t0) / DUR * (lx1 - lx0)
-            dr.rounded_rectangle((x0, y + 3, max(x1, x0 + 4), y + lh - 7), radius=4, fill=col)
-        y += lh + int(8 * S)
+            dr.rounded_rectangle((x0, y + int(lh * 0.12), max(x1, x0 + 4), y + int(lh * 0.75)), radius=min(4, lh // 4), fill=col)
+        y += lh + gap
     px = lx0 + (min(t, a.t1) - a.t0) / DUR * (lx1 - lx0)
     dr.line((px, LANES_Y - 6, px, y - 4), fill=INK, width=2)
 
@@ -193,13 +202,12 @@ def draw_overlay(img, t):
 
 
 # ---------------------------------------------------------------- pipeline
-if VID["crop"]:
-    cw, ch = VID["crop"]
-    vf = f"scale={cw}:{ch},crop={W}:{ch},fps={FPS}"
-    vw, vh = W, ch
-else:
-    vf = f"scale={VID['w']}:{VID['h']},fps={FPS}"
-    vw, vh = VID["w"], VID["h"]
+# scale to cover the region, then crop; bias the crop a little above centre, where faces usually are
+RW, RH = VID["w"], VID["h"]
+_s = max(RW / SRC_W, RH / SRC_H)
+_sw, _sh = int(math.ceil(SRC_W * _s / 2) * 2), int(math.ceil(SRC_H * _s / 2) * 2)
+vf = f"scale={_sw}:{_sh},crop={RW}:{RH}:(in_w-out_w)/2:(in_h-out_h)*0.4,fps={FPS}"
+vw, vh = RW, RH
 
 dec = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-ss", str(a.t0), "-t", str(DUR), "-i", a.video,
                         "-vf", vf, "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], stdout=subprocess.PIPE)
