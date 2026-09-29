@@ -46,8 +46,8 @@ lh = int(92 * S)
 logo = logo.resize((int(logo.width * lh / logo.height), lh), Image.LANCZOS)
 
 ITEMS = [(AMBER, "Speech to text", "NVIDIA Parakeet, 25 languages"),
-         (TEAL, "Who spoke when", "Nemotron-3-Diarization, live or offline"),
-         (GREEN, "What else is happening", "527 sound classes, same stream")]
+         (TEAL, "Who spoke when", "NVIDIA Nemotron-3-Diarization, live or offline"),
+         (GREEN, "What else is happening", "Xiaomi CED via ced.cpp, 527 sound classes")]
 
 
 def mix(c, k):

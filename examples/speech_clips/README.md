@@ -74,7 +74,8 @@ The credit line is burned into every frame. Keep it, and do not edit the film's 
 ./make_race_clip.sh          # reads ./data, writes out/race_cpu_{square,vertical}.mp4
 ```
 
-`data/` holds the diarization benchmark the launch clip used: 12.3 min, 3 speakers,
+Set `RACE_DATA` to point at another folder (the film wrapper uses `DATA` for its own files,
+so the two are separate). `data/` holds the diarization benchmark the launch clip used: 12.3 min, 3 speakers,
 Nemotron-3-Diarization, both engines on the same Ryzen 9 9950X3D at 16 threads, inference
 only. `pkcpp_cpu.json` and `nemo_cpu.json` set each side's finishing time, so the bars
 move at the real speed with no speed-up. `BENCH_RESULTS.md` has the full method and the
@@ -87,7 +88,9 @@ the GPU the two engines tie at full precision, which is stated as well.
 ## End card
 
 `endcard.py` has the text (name, tagline, three capability lines, links) as constants at
-the top. Edit them for another project. `--layout vertical` gives 9:16.
+the top. Edit them for another project. `--layout vertical` gives 9:16. Credit the source
+of each capability there: for the launch clips the lines read NVIDIA Parakeet, NVIDIA
+Nemotron-3-Diarization and Xiaomi CED via ced.cpp.
 
 ## Terminal clips
 
