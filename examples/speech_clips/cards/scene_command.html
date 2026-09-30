@@ -1,0 +1,52 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  :root{--bg:#0d1117;--panel:#0a0e13;--chrome:#11161d;--ink:#e6edf3;--dim:#8b949e;--faint:#5b6573;
+    --teal:#3ec8e0;--green:#9ccc65;--gold:#f0b429;--rose:#e0607e;--purple:#bd93f9;--str:#a5d6a3;--rule:#222b34}
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1200px;height:675px}
+  body{background:radial-gradient(900px 540px at 80% -12%,#16202b 0%,var(--bg) 60%);color:var(--ink);
+    font-family:"Space Grotesk",-apple-system,"Segoe UI",Inter,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;padding:44px 56px;position:relative}
+  .eyebrow{display:flex;align-items:center;gap:11px;color:var(--teal);font-weight:600;font-size:18px;
+    letter-spacing:.14em;text-transform:uppercase}
+  .eyebrow .dot{width:9px;height:9px;border-radius:50%;background:var(--teal);box-shadow:0 0 14px 2px var(--teal)}
+  h1{font-size:46px;line-height:1.06;font-weight:700;margin:12px 0 6px;letter-spacing:-.02em}
+  h1 .grad{background:linear-gradient(92deg,var(--teal),#7ee0ef);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--dim);font-size:20px;margin-bottom:22px}
+  .term{border:1px solid var(--rule);border-radius:12px;background:var(--panel);overflow:hidden;
+    box-shadow:0 18px 50px -20px #000;max-width:1088px}
+  .bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--chrome);border-bottom:1px solid var(--rule)}
+  .bar i{width:12px;height:12px;border-radius:50%;display:inline-block}
+  .bar .r{background:#ff5f56}.bar .y{background:#ffbd2e}.bar .g{background:#27c93f}
+  .bar .ttl{margin-left:10px;color:var(--faint);font-size:15px;font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace}
+  pre{font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;white-space:pre}
+  .cmd{padding:18px 26px 16px;font-size:20px;line-height:1.5}
+  .out{border-top:1px dashed var(--rule);background:#070a0e;padding:14px 26px 16px;font-size:16px;line-height:1.5}
+  .p{color:var(--faint)} .f{color:var(--teal)} .s{color:var(--str)} .k{color:var(--purple)} .c{color:var(--faint)}
+  .t{color:var(--faint)} .s0{color:var(--gold)} .s1{color:var(--teal)} .s2{color:var(--rose)} .snd{color:var(--green)}
+  .foot{position:absolute;left:56px;right:56px;bottom:28px;display:flex;justify-content:space-between;align-items:center;font-size:19px}
+  .foot .link{color:var(--ink);font-weight:600;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:18px}
+  .cta{display:flex;align-items:center;gap:13px}
+  .cta img{width:46px;height:46px;display:block;filter:drop-shadow(0 2px 7px #0009)}
+</style></head><body>
+  <div class="eyebrow"><span class="dot"></span>One command</div>
+  <h1>Words, speakers and sounds, <span class="grad">one pass</span></h1>
+  <div class="sub">Parakeet ASR + Nemotron-3-Diarization + Xiaomi CED (ced.cpp). Local, no Python.</div>
+  <div class="term">
+    <div class="bar"><i class="r"></i><i class="y"></i><i class="g"></i><span class="ttl">parakeet-cli scene</span></div>
+<pre class="cmd"><span class="p">$</span> <span class="f">parakeet-cli scene</span> --model tdt_ctc-110m-f16.gguf \
+    --diar nemotron-3-diarization-q8_0.gguf \
+    --sound ced-base-q8_0.gguf \
+    --input clip.wav --show-speech</pre>
+<pre class="out"><span class="t">[00:01.0 - 00:03.0]</span>  <span class="snd">(Chirp, tweet 0.70)</span>
+<span class="t">[00:06.4 - 00:09.0]</span>  <span class="s1">Speaker 1:</span> out of the way talk what? We're camping here
+<span class="t">[00:09.7 - 00:12.4]</span>  <span class="s2">Speaker 2:</span> Finally time to get that barbecue burning!
+<span class="t">[00:20.0 - 00:22.0]</span>  <span class="snd">(Burping, eructation 0.56)</span>
+<span class="t">[00:26.6 - 00:29.8]</span>  <span class="s0">Speaker 0:</span> Easy guys, we're supposed to be studying nature and not wrecking it.
+<span class="c">...</span></pre>
+  </div>
+  <div class="foot">
+    <span class="link">github.com/mudler/parakeet.cpp</span>
+    <div class="cta"><span class="link">localai.io</span><img src="../../voice_race/localai_logo.png" alt="LocalAI"></div>
+  </div>
+</body></html>

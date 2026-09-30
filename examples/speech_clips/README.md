@@ -92,6 +92,21 @@ the top. Edit them for another project. `--layout vertical` gives 9:16. Credit t
 of each capability there: for the launch clips the lines read NVIDIA Parakeet, NVIDIA
 Nemotron-3-Diarization and Xiaomi CED via ced.cpp.
 
+## Command cards
+
+`cards/*.html` are still images of the commands, in the house dark style (rendered with the
+repo's `render-card.sh`, 1200x675 at 2x):
+
+```sh
+cd examples/speech_clips
+WIDTH=1200 HEIGHT=675 ../../render-card.sh cards/scene_command.html cards/scene_command.png
+```
+
+`scene_command` shows the `parakeet-cli scene` line plus real output (trimmed with `...`, one
+line with an expletive left out); `localai_install` shows the gallery one-liner and the two
+`curl` calls, with no response, because the gallery entries were unreleased when it was made.
+Do not paste a fabricated response into it. Edit the HTML and re-render for other commands.
+
 ## Terminal clips
 
 `terminal_player.py` replays the same data in a `rich` TUI; record it with the recorder:
